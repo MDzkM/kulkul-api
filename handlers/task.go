@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"net/http"
 	"strconv"
+	"fmt"
 	
 	"github.com/MDzkM/kulkul-api/models"
 
@@ -17,35 +18,35 @@ import (
 type H map[string]interface{}
 
 func initAWSConnection() *s3.S3 {
-	awsAccessKey = "AKIAW74DYNZLAVCSJQMC"
-	awsSecretKey = "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"
+	awsAccessKey := "AKIAW74DYNZLAVCSJQMC"
+	awsSecretKey := "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"
 
-	creds = credentials.NewStaticCredentials(awsAccessKey, awsSecretKey, "")
+	creds := credentials.NewStaticCredentials(awsAccessKey, awsSecretKey, "")
 
-	_, err = creds.Get()
+	_, err := creds.Get()
 
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	s3Region = "us-east-1"
+	s3Region := "us-east-1"
 
-	cfg = aws.NewConfig().WithRegion(s3Region).WithCredentials(creds)
+	cfg := aws.NewConfig().WithRegion(s3Region).WithCredentials(creds)
 
-	s3Connection = s3.New(session.New(), cfg)
+	s3Connection := s3.New(session.New(), cfg)
 	return s3Connection
 }
 
 func S3UploadBase64(base64File string, objectKey string) error {
-	decode, err = base64.StdEncoding.DecodeString(base64File)
+	decode, err := base64.StdEncoding.DecodeString(base64File)
 
 	if err != nil {
 		return err
 	}
 
-	awsSession = initAWSConnection()
+	awsSession := initAWSConnection()
 
-	uploadParams = &s3.PutObjectInput{
+	uploadParams := &s3.PutObjectInput{
 		Bucket: aws.String("kulkul"),
 		Key:    aws.String(objectKey),
 		Body:   bytes.NewReader(decode),
@@ -69,11 +70,11 @@ func PutFridge(db *sql.DB) echo.HandlerFunc {
 
 		c.Bind(&fridge)
 
-		id, err = models.PutFridge(db, fridge.Model, fridge.Owner, fridge.Image)
+		id, err := models.PutFridge(db, fridge.Model, fridge.Owner, fridge.Image)
 
-		keyName = "fridge-" + strconv.Itoa(id) + ".jpg"
+		keyName := "fridge-" + strconv.Itoa(id) + ".jpg"
 		
-		b64data = base64Image[strings.IndexByte(base64Image, ',')+1:]
+		b64data := base64Image[strings.IndexByte(base64Image, ',')+1:]
 
 		err = services.S3UploadBase64(b64data, keyName)
 		
