@@ -1,18 +1,21 @@
 package handlers
 
 import (
+	"bytes"
+	"encoding/base64"
 	"database/sql"
 	"net/http"
 	"strconv"
+	"strings"
 	"fmt"
 	
 	"github.com/MDzkM/kulkul-api/models"
 
 	"github.com/labstack/echo"
 	"github.com/aws/aws-sdk-go/aws"
-    "github.com/aws/aws-sdk-go/aws/credentials"
-    "github.com/aws/aws-sdk-go/aws/session"
-    "github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 )
 
 type H map[string]interface{}
@@ -72,17 +75,12 @@ func PutFridge(db *sql.DB) echo.HandlerFunc {
 
 		id, err := models.PutFridge(db, fridge.Model, fridge.Owner, fridge.Image)
 
-		keyName := "fridge-" + strconv.Itoa(id) + ".jpg"
+		keyName := "fridge-" + strconv.Itoa(int(id)) + ".jpg"
 		
-		b64data := base64Image[strings.IndexByte(base64Image, ',')+1:]
+		b64data := fridge.Image[strings.IndexByte(fridge.Image, ',')+1:]
 
-		err = services.S3UploadBase64(b64data, keyName)
+		err = S3UploadBase64(b64data, keyName)
 		
-		if err != nil {
-			fmt.Println(err)
-		}
-		
-		return
 		if err == nil {
 			return c.JSON(http.StatusCreated, H{
 				"created": id,
@@ -90,7 +88,6 @@ func PutFridge(db *sql.DB) echo.HandlerFunc {
 		} else {
 			return err
 		}
-
 	}
 }
 
